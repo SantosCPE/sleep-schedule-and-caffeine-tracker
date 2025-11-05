@@ -1,0 +1,50 @@
+#include <iostream>
+#include <string>
+using namespace std;
+int main(){
+	int choice;
+	string name;
+	cout << "-----CAFFEINE TRACKER------" << endl;
+	cout << "Hi! Please enter your name." << endl;
+	cout << "Enter name: ";
+	cin >> name;
+	cout << "Hi! " << name << endl;
+	cout << "What would you want to do?" << endl;
+	cout << "1. Caffeine Tracker" << endl;
+	cout << "2. Exit" << endl;
+	cout << "Insert choice: ";
+	cin >> choice;
+	switch (choice){
+		case 1: {
+			cout << "How many cups did you drink today?" << endl;
+			int cup;
+			cout << "Cups: ";
+			cin >> cup;
+			double caffeine;
+			caffeine = cup * 94.8; // Average of caffeine on a cup of coffee
+		  if (caffeine >= 0 && caffeine <= 200){ 
+		  	cout << "Your total caffeine is: " << caffeine << " mg" << endl;
+		  	cout << "You haven't reach your daily limit." << endl;
+			  cout << "The maximum caffeine per day is 400 mg." << endl;
+	  	} 
+  		else if (caffeine >= 200 && caffeine <= 400){
+		  	cout << "Your total caffeine is: " << caffeine << " mg" << endl;
+	  		cout << "You almost reach your daily limit." << endl;
+  		}
+  		else {
+	  		cout << "Your total caffeine is: " << caffeine << " mg" << endl;
+		  	cout << "You have exceeded your daily limit." << endl;
+	  	}
+		break;
+		case 2: {
+			cout << "Thank you for using the caffeine tracker!" << endl;
+			break;
+		}
+		default: {
+			cout << "Wrong input." << endl;
+			break;
+		}
+}
+	return 0;
+}
+}
