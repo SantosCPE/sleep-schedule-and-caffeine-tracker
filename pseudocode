@@ -1,0 +1,241 @@
+START
+
+    FUNCTION recommendation_weekbasis(total_sleep, days_logged)
+        IF (days_logged == 0)
+            RETURN 0
+        ENDIF
+
+        average_sleep = total_sleep / days_logged
+        IF (average_sleep < 7)
+            RETURN 1 
+        ELSEIF (average_sleep <= 9)
+            RETURN 2 
+        ELSE
+            RETURN 3
+        ENDIF
+    ENDFUNCTION
+
+
+    STRUCT User
+        DECLARE string name
+    ENDSTRUCT
+
+
+    FUNCTION caffeine_mg(cups)
+        RETURN cups * 94.8
+    ENDFUNCTION
+
+
+    FUNCTION login(User& user)
+        OUTPUT "Username: "
+            INPUT username
+        OUTPUT "Password: "
+            INPUT password
+
+        IF "users.txt" file is not found
+            OUTPUT "User database not found. Creating default user." 
+            CREATEFILE users.txt
+                PUSH "admin admin123" to users.txt
+            OUTPUT "Default user 'admin' with password 'admin123' created. Please login again."
+            RETURN false
+        ENDIF
+
+        DECLARE string file_user, file_pass
+
+        OPEN "users.txt"
+            FOR each line in "users.txt"
+                READ stored_username, stored_password
+                    IF stored_username = username AND stored_password = password
+                        THEN user.name = username
+                        RETURN true 
+                    ENDIF
+            ENDFOR
+
+        OUTPUT "Invalid username or password. Try again."
+            RETURN false
+    ENDFUNCTION
+
+FUNCTION registerUser()
+    OUTPUT "Create a new account"
+    OUTPUT "Enter new username: "
+        INPUT username
+    OUTPUT "Enter new password: "
+        INPUT password
+
+    OPEN "users.txt" file
+        IF "users.txt" file opened successfully
+            DECLARE string file_user, file_pass
+        ENDIF
+        FOR each line in "users.txt"
+            READ stored_username and stored_password
+            WHILE "users.txt" is read
+                IF file_user = username THEN
+                    OUTPUT "Username already exists. Please choose a different username."
+                    RETURN false
+                ENDIF
+            ENDWHILE
+        ENDFOR
+    CLOSE "users.txt" file
+
+    OPEN "users.txt" in append mode
+        IF "users.txt" file failed to open
+            OUTPUT "Could not open users file for writing."
+            WRITE username and password
+        ENDIF
+    CLOSE "users.txt" file
+
+    OUTPUT "Account created successfully! You can now log in."
+    RETURN true
+END FUNCTION
+
+
+FUNCTION deleteAccount(username)
+    OPEN "users.txt" for reading
+    OPEN "temp_users.txt" for writing
+        IF "users.txt" & "temp_users.txt" isn't either open
+            OUTPUT "Error accessing user database."
+            RETURN false
+        ENDIF
+
+        DECLARE file_user, file_pass
+        DECLARE found = false
+        FOR each line in "users.txt"
+            READ uname and pass
+            IF file_user != username 
+                WRITE username and password to "temp_users.txt"
+            ELSE
+                found = true
+            ENDIF
+        ENDFOR
+    CLOSE "users.txt", "temp_users.txt"
+
+    IF found = false
+        OUTPUT "User not found in database."
+        DELETE "temp_users.txt"
+        RETURN false
+    ENDIF
+
+    REMOVE "users.txt"
+    RENAME "temp_users.txt", "users.txt"
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    FOR each log file ("sleep_log.txt", "temp_sleep_log.txt")
+        OPEN log file "sleep_log.txt" for reading
+        OPEN temp log "temp_sleep_log.txt" file for writing
+        FOR each entry in log file "sleep_log.txt"
+            READ uname, date, hours
+            IF uname != username
+                WRITE entry to "temp_sleep_log.txt" file
+            ENDIF
+        ENDFOR
+        CLOSE "sleep_log.txt", "temp_sleep_log.txt"
+        REPLACE original log file with temp file
+    ENDFOR
+
+    DISPLAY "Account and associated data deleted"
+    RETURN true
+END FUNCTION
+
+
+FUNCTION sleepJournal(user)
+    choice = 0
+    WHILE choice != 5 DO
+        DISPLAY Sleep Journal Menu options
+        PROMPT and INPUT choice
+
+        SWITCH choice
+            CASE 1:
+                PROMPT for today's date and hours slept
+                APPEND username, date, hours to "sleep_log.txt"
+            CASE 2:
+                DISPLAY all logs from "sleep_log.txt" with username, date, hours
+            CASE 3:
+                COMPUTE total_sleep and days_logged for current user from "sleep_log.txt"
+                CALL recommendation_weekbasis(total_sleep, days_logged)
+                DISPLAY recommendation message
+            CASE 4:
+                DELETE current user's logs from "sleep_log.txt"
+            CASE 5:
+                DISPLAY "Returning to main menu"
+            DEFAULT:
+                DISPLAY "Select a valid option"
+        ENDSWITCH
+    ENDWHILE
+END FUNCTION
+
+
+FUNCTION caffeineTracker(user)
+    choice = 0
+    WHILE choice != 5 DO
+        DISPLAY Caffeine Tracker Menu options
+        PROMPT and INPUT choice
+
+        SWITCH choice
+            CASE 1:
+                PROMPT for today's date and cups of coffee
+                APPEND username, date, cups to "caffeine_log.txt"
+            CASE 2:
+                DISPLAY all caffeine logs with calculated caffeine mg
+            CASE 3:
+                COMPUTE total cups for current user
+                CALCULATE total caffeine intake
+                DISPLAY caffeine intake status
+            CASE 4:
+                DELETE current user's caffeine logs
+            CASE 5:
+                DISPLAY "Returning to main menu"
+            DEFAULT:
+                DISPLAY "Select a valid option"
+        ENDSWITCH
+    ENDWHILE
+END FUNCTION
+
+
+MAIN
+    CREATE user object
+
+    DISPLAY welcome message
+
+    loggedIn = false
+    WHILE not loggedIn DO
+        PROMPT "1: Login, 2: Register"
+        INPUT option
+        IF option == 1 THEN
+            loggedIn = login(user)
+        ELSE IF option == 2 THEN
+            registerUser()
+        ELSE
+            DISPLAY "Invalid option"
+        ENDIF
+    ENDWHILE
+
+    DISPLAY "Hi" user.name
+
+    userLoggedIn = true
+    main_choice = 0
+    WHILE main_choice != 4 AND userLoggedIn DO
+        DISPLAY Main Menu
+        PROMPT and INPUT main_choice
+
+        SWITCH main_choice
+            CASE 1:
+                CALL sleepJournal(user)
+            CASE 2:
+                CALL caffeineTracker(user)
+            CASE 3:
+                PROMPT confirmation to delete account
+                IF confirmed THEN
+                    success = deleteAccount(user.name)
+                    IF success THEN
+                        userLoggedIn = false
+                    ENDIF
+                ENDIF
+            CASE 4:
+                DISPLAY exit message
+            DEFAULT:
+                DISPLAY "Select a valid option"
+        ENDSWITCH
+    ENDWHILE
+
+END MAIN
+
+END
