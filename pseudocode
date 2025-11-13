@@ -1,6 +1,6 @@
 START
 
-    FUNCTION recommendation_weekbasis(total_sleep, days_logged)
+    STARTFUNCTION recommendation_weekbasis(total_sleep, days_logged)
         IF (days_logged == 0)
             RETURN 0
         ENDIF
@@ -21,12 +21,12 @@ START
     ENDSTRUCT
 
 
-    FUNCTION caffeine_mg(cups)
+    STARTFUNCTION caffeine_mg(cups)
         RETURN cups * 94.8
     ENDFUNCTION
 
 
-    FUNCTION login(User& user)
+    STARTFUNCTION login(User& user)
         OUTPUT "Username: "
             INPUT username
         OUTPUT "Password: "
@@ -55,184 +55,433 @@ START
             RETURN false
     ENDFUNCTION
 
-FUNCTION registerUser()
-    OUTPUT "Create a new account"
-    OUTPUT "Enter new username: "
-        INPUT username
-    OUTPUT "Enter new password: "
-        INPUT password
+    START FUNCTION registerUser()
+        OUTPUT "Create a new account"
+        OUTPUT "Enter new username: "
+            INPUT username
+        OUTPUT "Enter new password: "
+            INPUT password
 
-    OPEN "users.txt" file
-        IF "users.txt" file opened successfully
-            DECLARE string file_user, file_pass
-        ENDIF
-        FOR each line in "users.txt"
-            READ stored_username and stored_password
-            WHILE "users.txt" is read
-                IF file_user = username THEN
-                    OUTPUT "Username already exists. Please choose a different username."
-                    RETURN false
+        OPEN "users.txt" file
+            IF "users.txt" file opened successfully
+                DECLARE string file_user, file_pass
+            ENDIF
+            FOR each line in "users.txt"
+                READ stored_username and stored_password
+                WHILE "users.txt" is read
+                    IF file_user = username THEN
+                        OUTPUT "Username already exists. Please choose a different username."
+                        RETURN false
                 ENDIF
-            ENDWHILE
-        ENDFOR
-    CLOSE "users.txt" file
+                ENDWHILE
+            ENDFOR
+        CLOSE "users.txt" file
 
-    OPEN "users.txt" in append mode
-        IF "users.txt" file failed to open
-            OUTPUT "Could not open users file for writing."
-            WRITE username and password
-        ENDIF
-    CLOSE "users.txt" file
+        OPEN "users.txt" in append mode
+            IF "users.txt" file failed to open
+                OUTPUT "Could not open users file for writing."
+                WRITE username and password
+            ENDIF
+        CLOSE "users.txt" file
 
-    OUTPUT "Account created successfully! You can now log in."
-    RETURN true
-END FUNCTION
+        OUTPUT "Account created successfully! You can now log in."
+        RETURN true
+    END FUNCTION
 
 
-FUNCTION deleteAccount(username)
-    OPEN "users.txt" for reading
-    OPEN "temp_users.txt" for writing
-        IF "users.txt" & "temp_users.txt" isn't either open
-            OUTPUT "Error accessing user database."
+    START FUNCTION deleteAccount(username)
+        OPEN "users.txt" for reading
+        OPEN "temp_users.txt" for writing
+            IF "users.txt" & "temp_users.txt" isn't either open
+                OUTPUT "Error accessing user database."
+                RETURN false
+            ENDIF
+
+            DECLARE file_user, file_pass
+            DECLARE found = false
+            FOR each line in "users.txt"
+                READ uname and pass
+                IF file_user != username 
+                    WRITE username and password to "temp_users.txt"
+                ELSE
+                    found = true
+                ENDIF
+            ENDFOR
+        CLOSE "users.txt", "temp_users.txt"
+
+        IF found = false
+            OUTPUT "User not found in database."
+            DELETE "temp_users.txt"
             RETURN false
         ENDIF
 
-        DECLARE file_user, file_pass
-        DECLARE found = false
-        FOR each line in "users.txt"
-            READ uname and pass
-            IF file_user != username 
-                WRITE username and password to "temp_users.txt"
-            ELSE
-                found = true
-            ENDIF
-        ENDFOR
-    CLOSE "users.txt", "temp_users.txt"
+        REMOVE "users.txt"
+        RENAME "temp_users.txt", "users.txt"
 
-    IF found = false
-        OUTPUT "User not found in database."
-        DELETE "temp_users.txt"
-        RETURN false
-    ENDIF
-
-    REMOVE "users.txt"
-    RENAME "temp_users.txt", "users.txt"
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    FOR each log file ("sleep_log.txt", "temp_sleep_log.txt")
-        OPEN log file "sleep_log.txt" for reading
-        OPEN temp log "temp_sleep_log.txt" file for writing
-        FOR each entry in log file "sleep_log.txt"
-            READ uname, date, hours
-            IF uname != username
-                WRITE entry to "temp_sleep_log.txt" file
+        OPEN log file "sleep_log.txt" file for reading
+            CREATEFILE temp log "temp_sleep_log.txt" file for writing
+            IF log file and temp log is both open THEN
+                DECLARE string uname, date, hours
             ENDIF
-        ENDFOR
+            FOR each entry in log file "sleep_log.txt
+                READ uname, date, hours
+                IF uname does not equal username
+                    WRITE entry to "temp_sleep_log.txt" file 
+                ENDIF
+            ENDFOR
         CLOSE "sleep_log.txt", "temp_sleep_log.txt"
-        REPLACE original log file with temp file
-    ENDFOR
+        REPLACE original log file "sleep_log.txt" with temp file "temp_sleep_log.txt"
 
-    DISPLAY "Account and associated data deleted"
-    RETURN true
-END FUNCTION
+    OPEN "caffeine_log.txt" for input
+        DECLARE cf_in = "caffeine_log.txt"
+    OPEN "temp_caffeine_log.txt" for output
+        DECLARE cf_temp = "temp_caffeine_log.txt"
+    IF "caffeine_log.txt" and "temp_caffeine_log.txt" are open
+        DECLARE string uname, date, cups
+        WHILE (cf_in >> uname >> date >> cups)
+            IF uname is not equal to username
+                OUTPUT cf_temp << uname << " " << date << " " << cups
+            ENDIF
+        ENDWHILE
+    ENDIF
+    CLOSE cf_in, cf_temp
+    REMOVE "caffeine_log.txt"
+    RENAME "temp_caffeine_log.txt" to "caffeine_log.txt"
+    PRINT "Account '" << username << "' and all associated data have been deleted."
+    RETURN TRUE
+ENDFUNCTION
 
-
-FUNCTION sleepJournal(user)
-    choice = 0
+STARTFUNCTION sleepJournal(user)
+    DECLARE choice = 0
     WHILE choice != 5 DO
-        DISPLAY Sleep Journal Menu options
-        PROMPT and INPUT choice
+        PRINT "Sleep Journal Menu:"
+        PRINT "1. Log today's sleep"
+        PRINT "2. View past sleep logs"
+        PRINT "3. Get sleep recommendation"
+        PRINT "4. Delete previous logs"
+        PRINT "5. Return to main menu"
+        PRINT "[Enter choice]: "
+        OUTPUT choice
 
         SWITCH choice
             CASE 1:
-                PROMPT for today's date and hours slept
-                APPEND username, date, hours to "sleep_log.txt"
+                OUTPUT "Please enter today's date: "
+                DECLARE string "date"
+                INPUT date
+                OUTPUT "Please enter number of hours you slept last night: "
+                DECLARE hours
+                INPUT hours
+                CREATEFILE "sleep_log.txt" in append mode
+                IF "sleep_log.txt" is open
+                    WRITE to "sleep_log.txt" user.name " " date " " hours
+                    CLOSE FILE
+                    OUTPUT "Sleep log saved successfully."
+                    ELSE
+                        OUTPUT "Error opening file."
+                    ENDELSE
+                ENDIF
             CASE 2:
-                DISPLAY all logs from "sleep_log.txt" with username, date, hours
+                OUTPUT "Past Sleep Logs: "
+                STARTOUTPUT 
+                    ALIGN to left
+                    SET width to 15
+                    OUTPUT "Username"
+                    SET width to 15
+                    OUTPUT "Date" 
+                    SET width to 15
+                    "Hours" 
+                ENDOUTPUT
+                STARTOUTPUT 
+                    SET fill_character = "-"
+                    SET width to 40
+                    OUTPUT fill_character
+                    SET fill_character = " "
+                ENDOUTPUT
+                OPEN "sleep_log.txt"
+                IF "sleep_log.txt" is open
+                    DECLARE string uname, date, log_hours
+                    DECLARE found = false
+                    STARTOUTPUT
+                        ALIGN left
+                        SET width = 15
+                        uname
+                        SET width = 15
+                        date
+                        SET width = 10
+                        log_hours
+                    ENDOUTPUT
+                    DECLARE found = true
+                    CLOSE "sleep_log.txt"
+                    IF file not found
+                        OUTPUT "No logs found."
+                        ELSE
+                        OUTPUT "No past sleep logs found."
+                        ENDELSE
+                    ENDIF
+                    BREAK
+                ENDIF
+                
             CASE 3:
-                COMPUTE total_sleep and days_logged for current user from "sleep_log.txt"
-                CALL recommendation_weekbasis(total_sleep, days_logged)
-                DISPLAY recommendation message
+                OPEN file "sleep_log.txt"
+                IF file is open
+                    DECLARE uname, date, log_hours
+                    DECLARE total_sleep = 0, days_logged = 0
+                    FOR every line of the file "sleep_log.txt"
+                        READ each line of the file "sleep_log.txt"
+                        EXTRACT uname, date, log_hours
+                        IF uname is same as user.name
+                            ADD log_hours to total_sleep
+                            INCREMENT days_logged by 1
+                        ENDIF
+                    ENDFOR
+                    CLOSE file "sleep_log.txt"
+
+                    IF days_logged = 0
+                        OUTPUT "No sleep logs found to provide a recommendation."
+                    ENDIF
+                    ELSE
+                        DECLARE recommendation = recommendation_weekbasis(total_sleep, days_logged)
+                        IF recommendation = 1
+                            OUTPUT "You are not getting enough sleep. Try to increase your sleep hours."
+                        ENDIF
+                        ELSEIF recommendation = 2
+                            OUTPUT "You are getting an optimal amount of sleep. Keep it up!"
+                        ENDELSEIF
+                        ELSE
+                            OUTPUT "You are getting too much sleep. Try to reduce your sleep hours."
+                        ENDELSE
+                    ELSE
+                        OUTPUT "No sleep logs found to provide a recommendation."
+                    ENDELSE
+                    BREAK
+                ENDIF
             CASE 4:
-                DELETE current user's logs from "sleep_log.txt"
+                OPEN "sleep_log.txt" for input
+                OPEN "temp_sleep_log.txt" for output
+                IF "temp_sleep_log.txt" and "sleep_log.txt" is open
+                    DECLARE string uname, date, hours
+                    FOR each line in "sleep_log.txt"   
+                        READ uname, date, hours
+                        IF uname is not the same as user.name
+                            WRITE uname " " date " " hours to "temp_sleep_log.txt"
+                        ENDIF
+                    ENDFOR
+                    
+                    CLOSE "sleep_log.txt", "temp_sleep_log.txt"
+                    REMOVE "sleep_log.txt"
+                    RENAME "temp_sleep_log.txt" to "sleep_log.txt"
+                    OUTPUT "Your previous sleep logs are deleted."
+                ELSE
+                    OUTPUT "Error deleting logs."
+                ENDELSE
+                ENDIF
+                BREAK
+                
             CASE 5:
-                DISPLAY "Returning to main menu"
+                PRINT "Returning to main menu"
+                BREAK
             DEFAULT:
-                DISPLAY "Select a valid option"
+                PRINT "Select a valid option"
+        ENDSWITCH
+    ENDWHILE
+ENDFUNCTION
+
+
+STARTFUNCTION caffeineTracker(User& user)
+    DECLARE choice = 0
+    WHILE choice != 5
+        OUTPUT "Caffeine Tracker Menu:"
+        OUTPUT "1. Log caffeine intake"
+        OUTPUT "2. View past caffeine logs"
+        OUTPUT "3. Get caffeine intake status"
+        OUTPUT "4. Delete previous caffeine logs"
+        OUTPUT "5. Return to main menu"
+        OUTPUT "[Enter choice]: "
+        INPUT choice
+
+        SWITCH choice
+            CASE 1:
+                OUTPUT "Please enter today's date: "
+                DECLARE string date
+                INPUT date
+                OUTPUT "How many cups of coffee did you drink today? "
+                DECLARE cups
+                IF "caffeine_log.txt" is open
+                    APPEND username, date, cups to "caffeine_log.txt"
+                    CLOSE "caffeine_log.txt"
+                    OUTPUT "Caffeine intake logged successfully."
+                ELSE
+                    OUTPUT "Error opening file."
+                ENDELSE
+                ENDIF
+                BREAK
+                
+            CASE 2:
+                OUTPUT "Past Caffeine Logs:"
+                STARTOUTPUT
+                    ALLIGN to left
+                    SET width = 15
+                    OUTPUT "Username"
+                    SET width = 15
+                    OUTPUT "Date"
+                    SET width = 10
+                    OUTPUT "Cups"
+                    SET width = 15
+                    OUTPUT "Caffeine(mg)"
+                ENDOUTPUT
+                STARTOUTPUT
+                    SET character_fill = '-'
+                    SET width = 55
+                    OUTPUT "-"
+                    SET character_fill = ' '
+                ENDOUTPUT
+                OPEN "caffeine_log.txt" for input
+                    IF file is open
+                        DECLARE uname, date, cups, found = false
+                        FOR every line in file
+                            READ uname, date, cups
+                        ENDFOR
+                        STARTOUTPUT
+                            ALIGN to left
+                            SET width = 15
+                            OUTPUT uname
+                            SET width = 15
+                            OUTPUT date
+                            SET width = 10
+                            OUTPUT cups
+                            SET width = 15
+                            OUTPUT caffeine_mg(cups)
+                        ENDOUTPUT
+                        DECLARE found = true
+                        CLOSE file
+                        IF file not found
+                            OUTPUT "No caffeine logs found."
+                            ELSE
+                                OUTPUT "No caffeine logs found."
+                            ENDELSE
+                        ENDIF
+                        BREAK
+            CASE 3:
+                OPEN caffeine_log.txt for input
+                    IF file is open
+                        DECLARE uname, date, cups, total_cups is 0, found is false
+                        FOR every line in the file
+                            READ uname, date, cups
+                        ENDFOR
+                        IF uname is same as user.name
+                            ADD value of cups to total_cups
+                            DECLARE found as true
+                        ENDIF
+                    ENDIF
+                CLOSE file
+                IF file not found
+                    OUTPUT "No caffeine logs found to evaluate."
+                ELSE
+                    DECLARE total_caffeine = caffeine_mg(total_cups)
+                    OUTPUT "Your total caffeine intake for logged days is: " total_caffeine " mg"
+                    IF total_caffeine is 200 or less
+                        OUTPUT "You haven't reached your daily limit. The maximum caffeine per day is 400 mg."
+                    ELSEIF total_caffeine is less than or is 400
+                        OUTPUT "You almost reached your daily limit."
+                    ENDELSEIF
+                    ELSE
+                        OUTPUT "You have exceeded your daily limit. This might be affecting your sleeping habits."
+                    ENDELSE
+                    ENDIF
+                ELSE
+                    OUTPUT "No caffeine logs found to evaluate."
+                ENDIF
+                    BREAK    
+            CASE 4:
+                OPEN caffeine_log.txt for input
+                OPEN "temp_caffeine_log.txt" for output
+                IF both files are open    
+                    DECLARE uname, date, cups
+                    FOR every line of caffeine_log.txt
+                        READ uname, date, cups
+                        IF uname is not the same as user.name
+                            WRITE uname " " date " " cups to "temp_caffeine_log.txt"
+                        ENDIF
+                    ENDFOR
+                    CLOSE both files
+                    REMOVE "caffeine_log.txt"
+                    RENAME "temp_caffeine_log.txt", "caffeine_log.txt"
+                    OUTPUT "Your previous caffeine logs deleted."
+                ELSE
+                    OUTPUT "Error deleting logs."
+                    BREAK
+            CASE 5:
+                OUTPUT "Returning to main menu"
+                BREAK
+            DEFAULT:
+                OUTPUT "Select a valid option"
         ENDSWITCH
     ENDWHILE
 END FUNCTION
 
-
-FUNCTION caffeineTracker(user)
-    choice = 0
-    WHILE choice != 5 DO
-        DISPLAY Caffeine Tracker Menu options
-        PROMPT and INPUT choice
-
-        SWITCH choice
-            CASE 1:
-                PROMPT for today's date and cups of coffee
-                APPEND username, date, cups to "caffeine_log.txt"
-            CASE 2:
-                DISPLAY all caffeine logs with calculated caffeine mg
-            CASE 3:
-                COMPUTE total cups for current user
-                CALCULATE total caffeine intake
-                DISPLAY caffeine intake status
-            CASE 4:
-                DELETE current user's caffeine logs
-            CASE 5:
-                DISPLAY "Returning to main menu"
-            DEFAULT:
-                DISPLAY "Select a valid option"
-        ENDSWITCH
-    ENDWHILE
-END FUNCTION
 
 
 MAIN
     CREATE user object
+    OUTPUT "Hello, welcome to your sleep tracker."
 
-    DISPLAY welcome message
-
-    loggedIn = false
+    DECLARE loggedIn = false
     WHILE not loggedIn DO
-        PROMPT "1: Login, 2: Register"
+        OUTPUT "1: Login\nEnter 2 to Register a new account \n[Enter Option]: "
+        DECLARE option
         INPUT option
-        IF option == 1 THEN
-            loggedIn = login(user)
-        ELSE IF option == 2 THEN
-            registerUser()
-        ELSE
-            DISPLAY "Invalid option"
-        ENDIF
+
+        SWITCH option
+            CASE 1
+                DECLARE loggedIn = login(user)
+                BREAK
+            CASE 2
+                DECLARE registerUser()
+                BREAK
+            DEFAULT
+                OUTPUT "Invalid option. Please enter 1 or 2."
+                BREAK
+        ENDSWITCH
     ENDWHILE
 
-    DISPLAY "Hi" user.name
+    OUTPUT "Hi" user.name "!"
 
-    userLoggedIn = true
-    main_choice = 0
+    DECLARE main.choice = 0, userLoggedIn = true
     WHILE main_choice != 4 AND userLoggedIn DO
-        DISPLAY Main Menu
-        PROMPT and INPUT main_choice
+        OUTPUT "\nMain Menu:"
+        OUTPUT "1. Sleep Journal"
+        OUTPUT "2. Caffeine Tracker"
+        OUTPUT "3. Delete Account"
+        OUTPUT "4. Exit"
+        OUTPUT "[Enter choice]: "
+        INPUT main_choice
 
         SWITCH main_choice
             CASE 1:
                 CALL sleepJournal(user)
+                BREAK
             CASE 2:
                 CALL caffeineTracker(user)
+                BREAK
             CASE 3:
-                PROMPT confirmation to delete account
+                OUTPUT "Are you sure you want to delete your account? This action cannot be undone. (y/n): "
+                DECLARE confirm
+                INPUT confirm
                 IF confirmed THEN
-                    success = deleteAccount(user.name)
-                    IF success THEN
-                        userLoggedIn = false
+                    IF deleteAccount(user.name)
+                        OUTPUT "Your account has been deleted. Exiting program..."
+                        DECLARE userLoggedIn as false
                     ENDIF
+                    ELSE
+                        OUTPUT "Account deletion canceled."
+                    ENDELSE
+                    BREAK
                 ENDIF
             CASE 4:
-                DISPLAY exit message
+                OUTPUT "Exiting the program. Goodbye!" 
+                BREAK
             DEFAULT:
-                DISPLAY "Select a valid option"
+                PRINT "Select a valid option"
         ENDSWITCH
     ENDWHILE
 
